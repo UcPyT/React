@@ -1,0 +1,49 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ball = workspace:WaitForChild("Ball", 5)
+
+if not ball then
+    return
+end
+
+local function onPlayerTouchBall(player, character)
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if humanoidRootPart then
+        local ballVelocity = ball:FindFirstChildOfClass("BodyVelocity")
+        if not ballVelocity then
+            ballVelocity = Instance.new("BodyVelocity")
+            ballVelocity.Parent = ball
+        end
+
+        -- تعزيز التحكم والدريبل ليكون أكثر قوة واستجابة فائقة مع حماية الكرة من الانقطاع بسهولة
+        local direction = (humanoidRootPart.CFrame.LookVector * 120) + Vector3.new(math.random(-10, 10), 50, math.random(-10, 10))
+        ballVelocity.Velocity = direction
+        ballVelocity.MaxForce = Vector3.new(5000000, 5000000, 5000000) -- تعزيز القوة لأقصى مستوى
+    end
+end
+
+ball.Touched:Connect(function(hit)
+    local character = hit.Parent
+    local player = Players:GetPlayerFromCharacter(character)
+    if player then
+        onPlayerTouchBall(player, character)
+    end
+end)
+
+-- تحسين استجابة الكرة مع تحركات اللاعب مع صد أقوى ضد محاولات الخصم لقطع الكرة
+RunService.Heartbeat:Connect(function()
+    local closestPlayer, closestDistance = nil, math.huge
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local distance = (ball.Position - player.Character.HumanoidRootPart.Position).Magnitude
+            if distance < closestDistance and distance < 13 then -- توسيع نطاق التحكم أكثر لمنع قطع الكرة
+                closestPlayer, closestDistance = player, distance
+            end
+        end
+    end
+
+
+    if closestPlayer and closestPlayer.Character then
+        onPlayerTouchBall(closestPlayer, closestPlayer.Character)
+    end
+end)
